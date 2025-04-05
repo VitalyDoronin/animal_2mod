@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draw Bounding Box</title>
+    <style>
+        #canvas {
+            position: relative;
+            border: 1px solid black;
+            width: 300px; /* Фиксированная ширина */
+        }
+        #canvas img {
+            width: 100%; /* Ширина изображения 100% от родителя */
+            height: auto; /* Высота изменяется пропорционально */
+        }
+        .box {
+            position: absolute;
+            border: 2px solid red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Draw a Bounding Box</h1>
+    <div id="canvas">
+        <img src="{{ image_url }}" alt="Test Image">
+    </div>
+    <select id="classSelector">
+        <option value="cat">Cat</option>
+        <option value="chicken">Chicken</option>
+        <option value="cow">Cow</option>
+        <option value="dog">Dog</option>
+        <option value="fox">Fox</option>
+        <option value="goat">Goat</option>
+        <option value="horse">Horse</option>
+        <option value="person">Person</option>
+        <option value="racoon">Racoon</option>
+        <option value="skunk">Skunk</option>
+    </select>
+    <button onclick="saveCoords()">Save Coordinates</button>
+    <button onclick="clearBoxes()">Clear Boxes</button>
+
+    <script src="{{ url_for('static', filename='scripts/script.js') }}"></script>
+</body>
+</html>

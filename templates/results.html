@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Результаты</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif; /* Шрифт для всего документа */
+            background-color: #f8f9fa; /* Цвет фона страницы */
+            margin: 0; /* Убираем отступы по умолчанию */
+            display: flex; /* Используем флексбокс для размещения меню и контента */
+        }
+
+        .sidebar {
+            width: 200px; /* Ширина бокового меню */
+            background-color: #343a40; /* Цвет фона бокового меню */
+            color: white; /* Цвет текста в меню */
+            padding: 20px; /* Отступы внутри меню */
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1); /* Тень для меню */
+        }
+
+        .sidebar a {
+            color: white; /* Цвет текста ссылок */
+            text-decoration: none; /* Убираем подчеркивание */
+            display: block; /* Делаем ссылки блочными элементами */
+            padding: 10px; /* Отступы для ссылок */
+            margin: 5px 0; /* Отступы между ссылками */
+            border-radius: 5px; /* Скругленные углы для ссылок */
+        }
+
+        .sidebar a:hover {
+            background-color: #0056b3; /* Цвет фона при наведении на ссылку */
+        }
+
+        .content {
+            flex: 1; /* Занимает оставшееся пространство */
+            padding: 20px; /* Отступы для контента */
+            text-align: center; /* Центрирование текста */
+        }
+
+        .download-link {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 20px;
+            color: white;
+            background-color: #007BFF; /* Цвет фона */
+            text-decoration: none; /* Убираем подчеркивание */
+            border-radius: 5px; /* Скругленные углы */
+            margin: 20px 0; /* Отступ сверху и снизу */
+        }
+
+        .download-link:hover {
+            background-color: #0056b3; /* Цвет фона при наведении */
+        }
+
+        .image-container {
+            background-color: #e9ecef; /* Светло-серый цвет фона */
+            border: 5px solid #343a40; /* Темно-серая рамка */
+            padding: 20px; /* Отступы внутри контейнера */
+            margin: 20px auto; /* Отступы сверху и снизу, центрирование контейнера */
+            max-width: 800px; /* Максимальная ширина контейнера */
+            border-radius: 10px; /* Скругление углов контейнера */
+        }
+
+        img {
+            max-width: 100%; /* Ограничиваем ширину изображений */
+            height: auto; /* Автоматическая высота */
+            margin: 10px 0; /* Отступы для изображений */
+        }
+
+        .logout-link {
+            color: white; /* Цвет текста ссылки выхода */
+            background-color: #dc3545; /* Красный цвет для кнопки выхода */
+            padding: 10px; /* Отступы для кнопки */
+            border-radius: 5px; /* Скругленные углы */
+            text-align: center; /* Центрирование текста */
+            margin-top: 20px; /* Отступ сверху */
+            text-decoration: none; /* Убираем подчеркивание */
+        }
+
+        .logout-link:hover {
+            background-color: #c82333; /* Темнее при наведении */
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Меню</h2>
+        <a href="{{ url_for('index2', username=username) }}">Главная</a> <!-- Ссылка на главную страницу пользователя -->
+        <a href="{{ url_for('logout') }}" class="logout-link">Выйти</a> <!-- Кнопка выхода -->
+    </div>
+    <div class="content">
+        <h1>Результаты обнаружения для класса: {{ selected_class }} (Порог: {{ confidence_threshold }})</h1>
+        {% if confidence_threshold is not none %}
+        <a class="download-link" href="{{ url_for('download_results', selected_class=selected_class, confidence_threshold=confidence_threshold) }}">
+            Скачать найденные изображения
+        </a>
+        {% endif %}
+        <br>
+
+        <div class="image-container">
+            {% for image in images %}
+            <a href="{{ url_for('edit_image', filename=image.filename, selected_class=selected_class, confidence_threshold=confidence_threshold) }}">
+                <img src="data:image/jpeg;base64,{{ image.image_base64 }}" alt="Обработанное изображение">
+            </a>
+            {% endfor %}
+        </div>
+
+        {% if not images %}
+        <p>Нет изображений, соответствующих критериям поиска.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

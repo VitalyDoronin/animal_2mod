@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Annotation Tool</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            cursor: crosshair;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <input type="file" id="imageUpload" accept="image/*">
+        <select id="categorySelect">
+            {% for category in categories %}
+                <option value="{{ category }}">{{ category }}</option>
+            {% endfor %}
+        </select>
+        <button onclick="saveAnnotations()">Save Annotations</button>
+        <button onclick="resetLastAnnotation()">Reset Last</button> <!-- Новая кнопка -->
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let img = new Image();
+    let drawing = false;
+    let annotations = [];
+    let startX, startY;
+    let currentFilename = '';
+
+    // Загрузка изображения
+    document.getElementById('imageUpload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.filename) {
+                currentFilename = data.filename;
+                img.src = `/uploads/${data.filename}`;
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                }
+            }
+        });
+    });
+
+    // Начало рисования
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        startX = (e.clientX - rect.left) / canvas.width;
+        startY = (e.clientY - rect.top) / canvas.height;
+        drawing = true;
+    });
+
+    // Движение мыши - показываем предварительную рамку
+    canvas.addEventListener('mousemove', (e) => {
+        if (drawing) {
+            const rect = canvas.getBoundingClientRect();
+            const currentX = (e.clientX - rect.left) / canvas.width;
+            const currentY = (e.clientY - rect.top) / canvas.height;
+
+            // Очищаем канвас и перерисовываем изображение
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+
+            // Рисуем все сохраненные аннотации
+            annotations.forEach(ann => {
+                ctx.strokeStyle = 'red';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(
+                    (ann.x - ann.w/2) * canvas.width,
+                    (ann.y - ann.h/2) * canvas.height,
+                    ann.w * canvas.width,
+                    ann.h * canvas.height
+                );
+            });
+
+            // Рисуем текущую рамку
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(
+                Math.min(startX, currentX) * canvas.width,
+                Math.min(startY, currentY) * canvas.height,
+                Math.abs(currentX - startX) * canvas.width,
+                Math.abs(currentY - startY) * canvas.height
+            );
+        }
+    });
+
+    // Окончание рисования
+    canvas.addEventListener('mouseup', (e) => {
+        if (drawing) {
+            const rect = canvas.getBoundingClientRect();
+            const endX = (e.clientX - rect.left) / canvas.width;
+            const endY = (e.clientY - rect.top) / canvas.height;
+
+            // Вычисляем координаты в формате YOLO
+            const width = Math.abs(endX - startX);
+            const height = Math.abs(endY - startY);
+            const centerX = Math.min(startX, endX) + width/2;
+            const centerY = Math.min(startY, endY) + height/2;
+
+            // Сохраняем аннотацию
+            annotations.push({
+                category: document.getElementById('categorySelect').value,
+                x: centerX,
+                y: centerY,
+                w: width,
+                h: height
+            });
+
+            // Перерисовываем все аннотации после добавления новой
+            redrawCanvas();
+            drawing = false;
+        }
+    });
+
+    // Функция для перерисовки канваса
+    function redrawCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        annotations.forEach(ann => {
+            ctx.strokeStyle = 'red';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(
+                (ann.x - ann.w/2) * canvas.width,
+                (ann.y - ann.h/2) * canvas.height,
+                ann.w * canvas.width,
+                ann.h * canvas.height
+            );
+        });
+    }
+
+    // Сброс последней аннотации
+    function resetLastAnnotation() {
+        if (annotations.length > 0) {
+            annotations.pop(); // Удаляем последнюю аннотацию
+            redrawCanvas(); // Перерисовываем канвас
+        }
+    }
+
+    // Сохранение аннотаций
+    function saveAnnotations() {
+        if (!currentFilename) return;
+
+        fetch('/save_annotations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                filename: currentFilename,
+                annotations: annotations
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Annotations saved successfully!');
+                annotations = [];
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+            }
+        });
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Загрузка файлов</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif; /* Шрифт для всего документа */
+            background-color: #f8f9fa; /* Цвет фона страницы */
+            padding: 20px; /* Отступы для тела страницы */
+            text-align: center; /* Центрирование текста */
+        }
+
+        h1 {
+            color: #343a40; /* Цвет заголовка */
+        }
+
+        .form-container {
+            background-color: #e9ecef; /* Светло-серый цвет фона */
+            border: 5px solid #343a40; /* Темно-серая рамка */
+            padding: 20px; /* Отступы внутри контейнера */
+            margin: 20px auto; /* Отступы сверху и снизу, центрирование контейнера */
+            max-width: 600px; /* Максимальная ширина контейнера */
+            border-radius: 10px; /* Скругление углов контейнера */
+        }
+
+        input[type="file"] {
+            margin: 10px 0; /* Отступы для поля выбора файла */
+        }
+
+        button, input[type="submit"] {
+            padding: 10px 20px; /* Отступы для кнопок */
+            font-size: 16px; /* Размер шрифта */
+            color: white; /* Цвет текста */
+            background-color: #007BFF; /* Цвет фона кнопки */
+            border: none; /* Убираем рамку */
+            border-radius: 5px; /* Скругленные углы */
+            cursor: pointer; /* Указатель при наведении */
+        }
+
+        button:hover, input[type="submit"]:hover {
+            background-color: #0056b3; /* Цвет фона при наведении */
+        }
+
+        #response {
+            margin-top: 20px; /* Отступ сверху для ответа */
+        }
+
+        .error {
+            color: #dc3545; /* Цвет текста для ошибок (красный) */
+        }
+
+        .success {
+            color: #007BFF; /* Цвет текста для успешных сообщений (синий) */
+        }
+    </style>
+</head>
+<body>
+
+    {% if session.username %}
+    <h1>Добро пожаловать, {{ session.username }}!</h1>
+    {% endif %}
+
+    <h2>Загрузите изображения для поиска:</h2>
+    <div class="form-container">
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="fileInput" name="files[]" multiple required>
+            <button type="submit">Загрузить</button>
+        </form>
+        <div id="response"></div>
+    </div>
+
+    <h2>Выберите класс, модель и порог уверенности:</h2>
+    <div class="form-container">
+        <form method="POST">
+            <label for="class">Класс:</label>
+            <select id="class" name="class">
+                {% for c in classes %}
+                    <option value="{{ c }}">{{ c }}</option>
+                {% endfor %}
+            </select><br><br>
+
+            <label for="model_type">Тип модели:</label>
+            <select id="model_type" name="model_type" onchange="updateModelList()">
+                <option value="yolo">YOLO</option>
+                <option value="ssd">SSD</option>
+            </select><br><br>
+
+            <label for="model_name">Модель:</label>
+            <select id="model_name" name="model_name">
+                <!-- Список моделей будет обновляться динамически -->
+            </select><br><br>
+
+            <label for="confidence">Порог уверенности:</label>
+            <input type="number" id="confidence" name="confidence" min="0" max="1" step="0.01" value="0.5" required><br><br>
+            <input type="submit" value="Показать результаты">
+        </form>
+    </div>
+    <br>
+    <a href="{{ url_for('logout') }}" class="btn btn-danger">Выйти</a>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const responseDiv = document.getElementById('response');
+        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const files = fileInput.files;
+            if (files.length === 0) {
+                responseDiv.textContent = 'Выберите файлы.';
+                responseDiv.className = 'error';
+                return;
+            }
+
+            // Проверка размера файлов
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].size > MAX_FILE_SIZE) {
+                    responseDiv.textContent = `Файл ${files[i].name} превышает максимальный размер 2 МБ.`;
+                    responseDiv.className = 'error';
+                    return;
+                }
+            }
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files[]', files[i]); // Обратите внимание на []
+            }
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    responseDiv.textContent = `Ошибка: ${errorData.error}`;
+                    responseDiv.className = 'error';
+                } else {
+                    const data = await response.json();
+                    responseDiv.textContent = `Файлы успешно загружены: ${data.filenames.join(', ')}`;
+                    responseDiv.className = 'success'; // Применяем класс для успешного сообщения
+                }
+            } catch (error) {
+                responseDiv.textContent = `Ошибка: ${error}`;
+                responseDiv.className = 'error';
+            }
+        });
+
+        // Данные о моделях из Flask
+        const yoloModels = {{ yolo_models | tojson }};
+        const ssdModels = {{ ssd_models | tojson }};
+
+        function updateModelList() {
+            const modelType = document.getElementById('model_type').value;
+            const modelSelect = document.getElementById('model_name');
+            modelSelect.innerHTML = ''; // Очищаем текущие опции
+
+            let models = [];
+            if (modelType === 'yolo') {
+                models = yoloModels;
+            } else if (modelType === 'ssd') {
+                models = ssdModels;
+            }
+
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.text = model;
+                modelSelect.appendChild(option);
+            });
+        }
+
+        // Инициализация списка моделей при загрузке страницы
+        window.onload = function() {
+            updateModelList();
+        };
+    </script>
+</body>
+</html>
