@@ -15,7 +15,7 @@ services:
       - DATABASE_URL=postgresql://mlflow:password@postgres:5432/app-db
     command: >
       /bin/bash -c "
-      if [ -d /workspace/.git ]; then cd /workspace && git pull; else git clone https://github.com/VitalyDoronin/animal_app.git /workspace; fi &&
+      if [ -d /workspace/.git ]; then cd /workspace && git pull; else git clone https://github.com/VitalyDoronin/animal_2mod.git /workspace; fi &&
       pip install --no-cache-dir -r requirements.txt &&
       flask run
       "
