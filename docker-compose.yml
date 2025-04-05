@@ -1,0 +1,27 @@
+version: "3.0"
+services:
+  flask:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5000"
+    environment:
+      - MINIO_ACCESS_KEY=mlflow
+      - MINIO_SECRET_KEY=password
+      - MINIO_ENDPOINT=s3:9000
+      - POSTGRES_USER=mlflow
+      - POSTGRES_PASSWORD=password
+      - DATABASE_URL=postgresql://mlflow:password@postgres:5432/app-db
+    command: >
+      /bin/bash -c "
+      if [ -d /workspace/.git ]; then cd /workspace && git pull; else git clone https://github.com/VitalyDoronin/animal_app.git /workspace; fi &&
+      pip install --no-cache-dir -r requirements.txt &&
+      flask run
+      "
+    networks:
+      - tracking_server_default
+
+networks:
+  tracking_server_default:
+    external: true
