@@ -31,7 +31,7 @@ app.config['SECRET_KEY'] = 'J5e-t4s-0t4-PuyE-TrWQ'
 # Подключение к базе данных PostgreSQL
 def get_db_connection():
     conn = psycopg2.connect(
-        host="localhost",
+        host="postgres",
         port=5432,
         database="app-db",
         user="mlflow",
@@ -42,7 +42,7 @@ def get_db_connection():
 # MinIO конфигурация
 MINIO_ACCESS_KEY = 'mlflow'
 MINIO_SECRET_KEY = 'password'
-MINIO_ENDPOINT = 'localhost:9000'
+MINIO_ENDPOINT = 's3:9000'
 MINIO_BUCKET_NAME = 'myappbucket'
 
 # Проверка переменных окружения
