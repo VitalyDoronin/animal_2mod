@@ -267,6 +267,9 @@ def upload_file():
     if not files:
         return jsonify({'error': 'Нет файлов'}), 400
 
+    # Создаем директорию uploads, если она не существует
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
     filenames = []
     for file in files:
         if file and allowed_file(file.filename):
