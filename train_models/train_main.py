@@ -1,24 +1,3 @@
-# from ultralytics import YOLO, settings
-# import mlflow
-# import os
-#
-# # Update a setting
-# settings.update({"mlflow": True})
-#
-# mlflow.set_tracking_uri("http://localhost:5050")
-#
-# model = YOLO("yolo11n.pt")
-# results = model.train(data='/Users/vi/Animals_Project/Animal/train_models/animals.v2-release.yolov11/data.yaml', epochs=1, imgsz=640, batch=16)
-#
-# # Export to ONNX
-# model.export(format='onnx', path='model.onnx')
-#
-# # Assuming you've set up MLflow as shown in your code
-# mlflow.log_artifact('model.onnx', artifact_path="models")
-#
-# # Register the model in MLflow Model Registry
-# mlflow.register_model("models/model.onnx", "my_registered_model")
-
 import mlflow
 from ultralytics import YOLO, settings
 import os
